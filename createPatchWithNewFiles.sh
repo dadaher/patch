@@ -1,0 +1,15 @@
+#!/bin/sh
+old=$1
+new=$2
+OIFS="$IFS"
+IFS="
+"
+rm -rf PATCH
+for file in $(diff -r -U 0 --suppress-common-lines -x"META-INF" $old/delivery $new/delivery | grep -v $old | grep "Only in" | sed 's/lib: /lib\//g' | sed 's/Only in //g'); do
+	dirname="$(dirname "${file}")"
+        Patch="PATCH/${dirname}"	  
+        echo creating PATCH folders $Patch
+	mkdir -p $Patch
+	cp ${file} $Patch
+      done
+      IFS="$OIFS"
