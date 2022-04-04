@@ -1,4 +1,9 @@
 #!/bin/sh
+# Tested on:
+#   - Ubuntu 20.04 with Java 11
+#   - Cent OS 7 with Java 11
+#
+# Author: DAHER
 PATCH=$1
 THIRD=$2
 OIFS="$IFS"
