@@ -118,7 +118,7 @@ pipeline{
       steps {
         echo 'Copy commun non-jars files having changes'
         sh './CommunChangedNonJarFiles.sh $OLD $NEW'
-        sh 'ls -lrth PATCHر'
+        sh 'ls -lrth PATCH'
       }
     }
     stage('4- Process Tnexus jars') {
