@@ -1,7 +1,7 @@
 pipeline{
   agent any
   stages {
-    stage('Set Parameters') {
+    stage('Setting Parameters') {
       steps {
         script {
           properties([
@@ -71,22 +71,20 @@ pipeline{
             ])
           ])
         }
+        echo "Old build: '${params.OLD}' "
+        echo "New build:  '${params.NEW}' "
         sh './TestInputOldNew.sh $OLD $NEW'
-      }
-    }
-    stage('Build') {
-      steps {
-          // Clean before build
-          //cleanWs()
-          cleanWs deleteDirs: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
-          // We need to explicitly checkout from SCM here
-          //checkout scm
-          echo "Cleaning ${env.JOB_NAME}..."
+        // Clean before build
+        //cleanWs()
+        echo "Cleaning ${env.JOB_NAME}..." 
+        cleanWs deleteDirs: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
+        // We need to explicitly checkout from SCM here
+        //checkout scm
       }
     }
     stage('1- Copy Versions to workspace') {
       parallel {
-        stage('1- Copy OLD version') {
+        stage('1.1- Copy OLD version') {
           steps {
             echo 'Copy Old build: ${params.OLD}'
             //sh 'mkdir -p $WORKSPACE/OLD'
@@ -94,22 +92,62 @@ pipeline{
             //copyArtifacts(projectName: "${env.JOB_BUILD_NAME}", selector: buildParameter('OLD'), target: "${env.WORKSPACE}/OLD")
             copyArtifacts(projectName: "${env.JOB_BUILD_NAME}", selector: specific(params.OLD), target: "${env.WORKSPACE}")
             //copyArtifacts projectName: 'DXB-BUILD', selector: buildParameter('OLD'), target: 'OLD'
+            sh 'mv *$OLD $OLD'
           }
         }
-        stage('2- Copy NEW version') {
+        stage('1.2- Copy NEW version') {
           steps {
             echo 'Copy New build:  ${params.NEW}'
             //sh 'mkdir -p $WORKSPACE/NEW'
             copyArtifacts(projectName: "${env.JOB_BUILD_NAME}", selector: specific(params.NEW), target: "${env.WORKSPACE}")
+            sh 'mv *$NEW $NEW'
+            sh 'ls -lrth'
           }
         }
+      }
+    }
+
+    stage('2- Create patch structure') {
+      steps {
+        echo 'Create Patch folder structure '
+        echo 'Copy newly added 3rd parties jars and non-jar files'
+        sh './createPatchWithNewFiles.sh $OLD $NEW'
+      }
+    }
+    stage('3- Process non-jar files') {
+      steps {
+        echo 'Copy commun non-jars files having changes'
+        sh './CommunChangedNonJarFiles.sh $OLD $NEW'
+        sh 'ls -lrth PATCHر'
+      }
+    }
+    stage('4- Process Tnexus jars') {
+      steps {
+        echo 'Copy empty tnexus jars files having changes'
+        sh './CopyTnexusJarsToPatch.sh $OLD $NEW'
+        echo 'Copy empty tnexus jars files having changes'
+        sh ' ./CommunChangedJarFiles.sh  $OLD $NEW'
+      }
+    }
+    stage('5- Complete 3rd parties jars ') {
+      steps {
+        echo 'Complete 3rd parties jars from local thirdparties folder'
+        echo 'Replace the dummy-empty jars with real ones'
+        sh './Complete3rdPJars.sh PATCH /var/lib/jenkins/thirdparties/lib/'
+      }
+    }
+    stage('6- Create Deleted file report ') {
+      steps {
+        echo 'Create deleted-files-report.txt file: it contains the list of files that should removed from the deployment'
+        sh './createDeletedFileReport.sh $OLD $NEW'
       }
     }
   }
   post {
     // Clean after build
     always {
-        cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
+        echo 'Cleaning'
+        //cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
     }
   }
   options {
