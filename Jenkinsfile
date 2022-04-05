@@ -71,13 +71,14 @@ pipeline{
             ])
           ])
         }
+        sh './TestInputOldNew.sh $OLD $NEW'
       }
     }
     stage('Build') {
       steps {
           // Clean before build
           //cleanWs()
-          cleanWs deleteDirs: true, patterns: [[pattern: '.sh', type: 'EXCLUDE']]
+          cleanWs deleteDirs: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
           // We need to explicitly checkout from SCM here
           //checkout scm
           echo "Cleaning ${env.JOB_NAME}..."
@@ -85,7 +86,7 @@ pipeline{
     }
     stage('1- Copy Versions to workspace') {
       parallel {
-        stage('1- Copy Old version') {
+        stage('1- Copy OLD version') {
           steps {
             echo 'Copy Old build: ${params.OLD}'
             //sh 'mkdir -p $WORKSPACE/OLD'
@@ -95,7 +96,7 @@ pipeline{
             //copyArtifacts projectName: 'DXB-BUILD', selector: buildParameter('OLD'), target: 'OLD'
           }
         }
-        stage('2- Copy builds from original job') {
+        stage('2- Copy NEW version') {
           steps {
             echo 'Copy New build:  ${params.NEW}'
             //sh 'mkdir -p $WORKSPACE/NEW'
@@ -108,12 +109,7 @@ pipeline{
   post {
     // Clean after build
     always {
-        cleanWs(cleanWhenNotBuilt: true,
-                deleteDirs: true,
-                disableDeferredWipeout: true,
-                notFailBuild: true,
-                patterns: [[pattern: '.gitignore', type: 'INCLUDE'],
-                            [pattern: '.sh', type: 'EXCLUDE']])
+        cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
     }
   }
   options {
