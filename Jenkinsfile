@@ -73,7 +73,16 @@ pipeline{
         }
       }
     }
-
+    stage('Build') {
+      steps {
+          // Clean before build
+          //cleanWs()
+          cleanWs deleteDirs: true, patterns: [[pattern: '.sh', type: 'EXCLUDE']]
+          // We need to explicitly checkout from SCM here
+          //checkout scm
+          echo "Cleaning ${env.JOB_NAME}..."
+      }
+    }
     stage('1- Copy Versions to workspace') {
       parallel {
         stage('1- Copy Old version') {
@@ -95,5 +104,20 @@ pipeline{
         }
       }
     }
+  }
+  post {
+    // Clean after build
+    always {
+        cleanWs(cleanWhenNotBuilt: true,
+                deleteDirs: true,
+                disableDeferredWipeout: true,
+                notFailBuild: true,
+                patterns: [[pattern: '.gitignore', type: 'INCLUDE'],
+                            [pattern: '.sh', type: 'EXCLUDE']])
+    }
+  }
+  options {
+    // This is required if you want to clean before build
+    skipDefaultCheckout(true)
   }
 }
