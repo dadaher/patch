@@ -82,7 +82,7 @@ pipeline{
         //checkout scm
       }
     }
-    stage('1- Copy Versions to workspace') {
+    stage('1- Copy Versions to workspace:') {
       parallel {
         stage('1.1- Copy OLD version') {
           steps {
@@ -93,6 +93,7 @@ pipeline{
             copyArtifacts(projectName: "${env.JOB_BUILD_NAME}", selector: specific(params.OLD), target: "${env.WORKSPACE}")
             //copyArtifacts projectName: 'DXB-BUILD', selector: buildParameter('OLD'), target: 'OLD'
             sh 'mv *$OLD $OLD'
+            sh 'tree --du -h $OLD'
           }
         }
         stage('1.2- Copy NEW version') {
@@ -101,31 +102,31 @@ pipeline{
             //sh 'mkdir -p $WORKSPACE/NEW'
             copyArtifacts(projectName: "${env.JOB_BUILD_NAME}", selector: specific(params.NEW), target: "${env.WORKSPACE}")
             sh 'mv *$NEW $NEW'
-            sh 'ls -lrth'
+            sh 'tree --du -h $NEW'
           }
         }
       }
     }
 
-    stage('2- Create patch structure') {
+    stage('2- Create patch structure:') {
       steps {
         echo 'Create Patch folder structure '
         echo 'Copy newly added 3rd parties jars and non-jar files'
         sh './createPatchWithNewFiles.sh $OLD $NEW'
       }
     }
-    stage('3- Process non-jar files') {
+    stage('3- Process non-jar files:') {
       steps {
         echo 'Copy commun non-jars files having changes'
         sh './CommunChangedNonJarFiles.sh $OLD $NEW'
         sh 'tree --du -h PATCH'
       }
     }
-    stage('4- Process Tnexus jars') {
+    stage('4- Process Tnexus jars:') {
       steps {
         echo 'Copy empty tnexus jars files having changes'
         sh './CopyTnexusJarsToPatch.sh $OLD $NEW'
-        echo 'Copy empty tnexus jars files having changes'
+        echo 'Deeply compare tnexus jars having same names(ignoring META-INF)'
         sh ' ./CommunChangedJarFiles.sh  $OLD $NEW'
         echo 'Removing compact folder from patch'
         sh 'rm -rf PATCH/$NEW/delivery/compact'
@@ -151,24 +152,30 @@ pipeline{
         sh ''' 
         NAME=$(echo $OLD-$NEW | tr -d ' ') 
         mv PATCH/$NEW PATCH/$NAME
-        echo 'Generate Patch tree'
-        tree --du -h PATCH || echo 'Empty'
-        '''
-        sh '''
-        mkdir -p Reports
-        cp *.diff Reports
-        tree --du -h PATCH > Reports/Patch-tree.txt
+        cd PATCH
+        zip -r $NAME.zip $NAME
         '''
       }
-    }    
-
+    }
+    stage('8- Generate Patch reports ') {
+      steps {
+        sh '''
+        echo 'Generate Patch tree'
+        tree --du -h PATCH || echo 'Empty'
+        mkdir -p Reports
+        tree --du -h PATCH > Reports/Patch-tree.txt
+        '''
+        sh '''
+        ./keepOnlyUsefulDiff.sh
+        '''
+      }
+    }
   }
   post {
     // Clean after build
     always {
-        archiveArtifacts artifacts: 'PATCH/** , Reports/**', onlyIfSuccessful: true
+        archiveArtifacts artifacts: 'PATCH/*.zip , Reports/**', onlyIfSuccessful: true
         echo 'Cleaning'
-
         cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
     }
   }
