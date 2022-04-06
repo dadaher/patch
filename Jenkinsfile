@@ -118,7 +118,7 @@ pipeline{
       steps {
         echo 'Copy commun non-jars files having changes'
         sh './CommunChangedNonJarFiles.sh $OLD $NEW'
-        sh 'ls -lrth PATCH'
+        sh 'tree --du -h PATCH'
       }
     }
     stage('4- Process Tnexus jars') {
@@ -142,14 +142,34 @@ pipeline{
       steps {
         echo 'Create deleted-files-report.txt file: it contains the list of files that should removed from the deployment'
         sh './createDeletedFileReport.sh $OLD $NEW'
+        sh 'cp deleted-files-report.txt PATCH/$NEW'
       }
     }
+    stage('7- Finalizing patch folder ') {
+      steps {
+        echo "Rename the Patch to be : '${params.OLD}''${params.OLD}' " 
+        sh ''' 
+        NAME=$(echo $OLD-$NEW | tr -d ' ') 
+        mv PATCH/$NEW PATCH/$NAME
+        echo 'Generate Patch tree'
+        tree --du -h PATCH || echo 'Empty'
+        '''
+        sh '''
+        mkdir -p Reports
+        cp *.diff Reports
+        tree --du -h PATCH > Reports/Patch-tree.txt
+        '''
+      }
+    }    
+
   }
   post {
     // Clean after build
     always {
+        archiveArtifacts artifacts: 'PATCH/** , Reports/**', onlyIfSuccessful: true
         echo 'Cleaning'
-        //cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
+
+        cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
     }
   }
   options {
