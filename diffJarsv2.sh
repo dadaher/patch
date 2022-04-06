@@ -64,7 +64,7 @@ if [ -n "$3" ]; then
 fi
 
 # specidy javap option to -public
-[ -z "${JAVAP_OPTS}" ] && JAVAP_OPTS="-public"
+#[ -z "${JAVAP_OPTS}" ] && JAVAP_OPTS="-public"
 
 #Specify diff option to be -r -U 0 --suppress-common-lines
 [ -z "${DIFF_OPTS}" ] && DIFF_OPTS="-r -q -x 'META-INF' "
@@ -99,17 +99,17 @@ fi
 #	    echo "Extract: ${EXTRACT_BIN}"
 #fi
 #Check if javap installed and use javap -public option
-[ ! -x "${JAVAP_BIN}" ] && JAVAP_BIN="$(which javap 2> /dev/null)"
-if [ ! -x "${JAVAP_BIN}" ]; then
-	  echo "Could not find javap."
-	    exit 4
-fi
+#[ ! -x "${JAVAP_BIN}" ] && JAVAP_BIN="$(which javap 2> /dev/null)"
+#if [ ! -x "${JAVAP_BIN}" ]; then
+#	  echo "Could not find javap."
+#	    exit 4
+#fi
 #echo "Javap: ${JAVAP_BIN} ${JAVAP_OPTS}"
 
 #Check if sort is installed
 [ ! -x "${JAVAP_POST_PROC_BIN}" ] && JAVAP_POST_PROC_BIN="$(which sort 2> /dev/null)"
 if [ ! -x "${JAVAP_POST_PROC_BIN}" ]; then
-	  echo "Could not find utility (\"sort\" by default) for post-processing javap's output."
+	  echo "Could not find utility (\"sort\" by default) for post-processing output."
 	    exit 5
 fi
 #echo "Javap post-processor: ${JAVAP_POST_PROC_BIN} ${JAVAP_POST_PROC_OPTS}"
@@ -201,7 +201,10 @@ cd "${dir2}" && find . -type f -printf "%P\\n" | sort > "${dir2list}"
 
 # Write to output
 cat << EOH1 > "${output}"
-Differences (missing or extra classes) between old $filename1 and new $filename2 ...
+============================================================================
+
+Differences (missing or extra classes) between:
+old $filename1 and new $filename2 ...
 
 ============================================================================
 
@@ -212,13 +215,13 @@ EOH1
 "${DIFF_BIN}" -U 0 -x "META-INF" --suppress-common-lines "${dir1list}" "${dir2list}" >> "${output}"
 error=$?
 echo diff result for diff jars:$error
-echo "Running ${JAVAP_BIN} on the contents of $filename1 and $filename2 ..."
+#echo "Running ${JAVAP_BIN} on the contents of $filename1 and $filename2 ..."
 #Create javap file for each .class of two tempsdirectories
 
 
       echo "Generating diff into ${output} ..."
       cd "${pwd}"
-#Write the diff between the .javap classes create from.class into output	  
+#Write the diff to output	  
       cat << EOH2 >> "${output}"
 
 ============================================================================
