@@ -144,17 +144,31 @@ pipeline{
         echo 'Create deleted-files-report.txt file: it contains the list of files that should removed from the deployment'
         sh './createDeletedFileReport.sh $OLD $NEW'
         sh 'cp deleted-files-report.txt PATCH/$NEW'
+        sh '''
+        mkdir -p Reports
+        cp deleted-files-report.txt Reports
+        '''
       }
     }
     stage('7- Finalizing patch folder ') {
       steps {
-        echo "Rename the Patch to be : '${params.OLD}''${params.OLD}' " 
-        sh ''' 
+        echo "Rename the Patch to be : '${params.OLD}'-'${params.OLD}' " 
+       /** sh ''' 
         NAME=$(echo $OLD-$NEW | tr -d ' ') 
         mv PATCH/$NEW PATCH/$NAME
+        mv PATCH/$NAME/delivery/* PATCH/$NAME
+        rmdir PATCH/$NAME/delivery
         cd PATCH
-        zip -r $NAME.zip $NAME
-        '''
+        #zip -r $NAME.zip $NAME
+        cd $NAME 
+        zip -r $NAME.zip ./*
+        mv $NAME.zip ../
+        cd ../
+        #cd DXB-2020-03-17-1-DXB-2021-08-24-1-JAVA && zip -r DXB-2020-03-17-1-DXB-2021-08-24-1-JAVA.zip ./* && mv DXB-2020-03-17-1-DXB-2021-08-24-1-JAVA.zip ../ && cd ../
+
+
+        '''**/
+        sh 'restructurePatch.sh $OLD $NEW'
       }
     }
     stage('8- Generate Patch reports ') {
