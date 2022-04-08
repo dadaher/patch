@@ -74,6 +74,7 @@ pipeline{
         if(!params.Backward_Patch){
           sh './TestInputOldNew.sh $OLD $NEW'
         }
+        currentBuild.displayName = "${OLD}-${NEW}"
         }
         echo "Old build: '${params.OLD}' "
         echo "New build:  '${params.NEW}' "
@@ -181,6 +182,9 @@ pipeline{
         archiveArtifacts artifacts: 'PATCH/*.zip , Reports/**', onlyIfSuccessful: true
         echo 'Cleaning'
         cleanWs deleteDirs: true, notFailBuild: true, patterns: [[pattern: '*.sh', type: 'EXCLUDE']]
+        //script {
+        //  currentBuild.displayName = "${params.OLD}-{params.NEW}"
+        //}
     }
   }
   options {
