@@ -67,13 +67,18 @@ pipeline{
                 '''
                   ]
                 ]
-              ]
+              ],
+              booleanParam(name: 'Backward_Patch', defaultValue: false, description: 'Enable Backward patch: Do not check the values of OLD and NEW')
             ])
           ])
+        if(!params.Backward_Patch){
+          sh './TestInputOldNew.sh $OLD $NEW'
+        }
         }
         echo "Old build: '${params.OLD}' "
         echo "New build:  '${params.NEW}' "
-        sh './TestInputOldNew.sh $OLD $NEW'
+
+        //sh './TestInputOldNew.sh $OLD $NEW'
         // Clean before build
         //cleanWs()
         echo "Cleaning ${env.JOB_NAME}..." 
@@ -153,22 +158,7 @@ pipeline{
     stage('7- Finalizing patch folder ') {
       steps {
         echo "Rename the Patch to be : '${params.OLD}'-'${params.OLD}' " 
-       /** sh ''' 
-        NAME=$(echo $OLD-$NEW | tr -d ' ') 
-        mv PATCH/$NEW PATCH/$NAME
-        mv PATCH/$NAME/delivery/* PATCH/$NAME
-        rmdir PATCH/$NAME/delivery
-        cd PATCH
-        #zip -r $NAME.zip $NAME
-        cd $NAME 
-        zip -r $NAME.zip ./*
-        mv $NAME.zip ../
-        cd ../
-        #cd DXB-2020-03-17-1-DXB-2021-08-24-1-JAVA && zip -r DXB-2020-03-17-1-DXB-2021-08-24-1-JAVA.zip ./* && mv DXB-2020-03-17-1-DXB-2021-08-24-1-JAVA.zip ../ && cd ../
-
-
-        '''**/
-        sh 'restructurePatch.sh $OLD $NEW'
+        sh './restructurePatch.sh $OLD $NEW'
       }
     }
     stage('8- Generate Patch reports ') {
