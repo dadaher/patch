@@ -8,5 +8,6 @@
 old=$1
 new=$2
 error=0
-[[ "${old}">"${new}" ]] && echo "Error in versions choice: OLD <---> NEW" && error=1
+[[ "${old}">"${new}" ]] && echo "Error in versions choice: OLD > NEW !!" && error=1
+[ $old == $new ] && echo "Error in versions choice: OLD and NEW values are the same !!" && error=1
 exit $error
