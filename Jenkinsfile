@@ -68,16 +68,16 @@ pipeline{
                   ]
                 ]
               ],
-              booleanParam(name: 'Backward_Patch', defaultValue: false, description: 'Enable Backward patch: Do not check the values of OLD and NEW')
+              booleanParam(name: 'RollBack_Patch', defaultValue: false, description: 'Enable RollBack patch: Do not check the values of OLD and NEW')
             ])
           ])
-        if(!params.Backward_Patch){
+        if(!params.RollBack_Patch){
           sh './TestInputOldNew.sh $OLD $NEW'
         }
         currentBuild.displayName = "${OLD}-${NEW}"
         }
         echo "Old build: '${params.OLD}' "
-        echo "New build:  '${params.NEW}' "
+        echo "New build:  $NEW "
 
         //sh './TestInputOldNew.sh $OLD $NEW'
         // Clean before build
@@ -132,6 +132,8 @@ pipeline{
       steps {
         echo 'Copy empty tnexus jars files having changes'
         sh './CopyTnexusJarsToPatch.sh $OLD $NEW'
+        echo 'Copy new Tnexus grammar Jars'
+        sh './GrammarJarFiles.sh $OLD $NEW'
         echo 'Deeply compare tnexus jars having same names(ignoring META-INF)'
         sh ' ./CommunChangedJarFiles.sh  $OLD $NEW'
         echo 'Removing compact folder from patch'
@@ -160,6 +162,8 @@ pipeline{
       steps {
         echo "Rename the Patch to be : '${params.OLD}'-'${params.OLD}' " 
         sh './restructurePatch.sh $OLD $NEW'
+        echo 'Remove Empty folder if exists'
+        sh 'find PATCH -type d -empty -delete'
       }
     }
     stage('8- Generate Patch reports ') {
